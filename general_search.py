@@ -1,6 +1,8 @@
 import sys
 
 from crossword import *
+from util import PriorityQueue
+from util import Node
 
 
 class CrosswordCreator():
@@ -14,18 +16,23 @@ class CrosswordCreator():
             var: self.crossword.words.copy()
             for var in self.crossword.variables
         }
+        self._countActions=0
+
+
+    @property
+    def countActions(self):
+        return self._countActions
+
+    @countActions.setter
+    def all_avaliable_actions(self):
+        self._countActions=len(self.get_actions(self.initial_state))
+
 
     @property
     def initial_state(self):
         return dict.fromkeys(self.crossword.variables)
 
     def enforce_node_consistency(self):
-        """
-        Update `self.domains` such that each variable is node-consistent.
-        (Remove any values that are inconsistent with a variable's unary
-         constraints; in this case, the length of the word.)
-        """
-        #crossword feha variables meen ka list w eh words w constraints(overlapping)
         for var in self.crossword.variables:
             new_domain=[]
             for word in self.domains[var]:
@@ -104,13 +111,12 @@ class CrosswordCreator():
 
         img.save(filename)
 
-    # MAKE SUREEEEEEE EN THIS DOESNT CHOOSE THE SAME WORD TAKEN FOR ANOTHER UNASSIGNED VARIABLE
     def get_actions(self,state):
-        print("currrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr")
-        print(state)
         actions=list()
         for var in state:
-            # check if the variable is unassigned if yes choose for it an assignment
+            """
+            check if the variable is unassigned if yes choose for it an assignment
+            """
             if state[var]==None:
                 """
                 conditions is a dict with index of chosen word as a key 
@@ -118,17 +124,27 @@ class CrosswordCreator():
 
                 """
                 conditions=dict.fromkeys([i for i in range(var.length)])
-                # get the all other variables that are overlapping with the variable I want to assigm value to "var"
+                """
+                get the all other variables that are overlapping with the variable 
+                I want to assigm value to "var"
+                """
                 overlaps_set=self.crossword.neighbors(var)
                 for overlap_var in overlaps_set:
-                    # if the overlapping variables are assigned then the overlapping constraint between "var" and "overlap_var" must be satisified
+                    """
+                    if the overlapping variables are assigned then the overlapping 
+                    constraint between "var" and "overlap_var" must be satisified
+                    """
                     if state[overlap_var]!=None:
                         overlap_idx=self.crossword.overlaps[(var,overlap_var)]
                         if conditions[overlap_idx[0]] == None or conditions[overlap_idx[0]]==state[overlap_var][overlap_idx[1]]:
                             conditions[overlap_idx[0]]=state[overlap_var][overlap_idx[1]]
                         else:
-                            print("Contradiction !!!!!")
-                            return None # we can't proceed any more with this state because it requires different values for the same place of the variable
+                            """
+                            we can't proceed any more with this state because it requires 
+                            different values for the same place of the variable
+                            that means we reach a contradiction
+                            """
+                            return []
 
                 # avaliable words for certain variables that won't voilate any constraint
                 avaliable_actions=[]
@@ -154,53 +170,60 @@ class CrosswordCreator():
 
                 """
                 if len(avaliable_actions)==0:
-                    print("Contradiction !!!!!")
-                    return None
+                    return []
                 else:
                     actions.extend(avaliable_actions)
 
-        print(actions)
         return actions
 
+    
+    
     def get_successor(self,state,action):
-        new_state=[]
+        new_state=state.copy()
+        new_state[action[0]]=action[1]
         return new_state
 
+    """
+    check all variables are assigned 
+     """
     def is_goal(self,state):
-        return False
+        return all(state.values())
+    
+
+    """
+    choose a state that results in a minimum number of conflicts with other variables.
+    """
+    def min_conflict_heuristic(self,state):
+        """
+        return the number of actions that are avaliable in this state and choose the state that 
+        will be less for the better states
+        """
+        return self.countActions-len(self.get_actions(state))
 
 
-
+    # A* search algorithm is used to solve the crossword as a search problem
     def solve(self,state):
         if self.is_goal(state):return[]
-        #remove all invalid words from domain i.e run node consistency
-        print("Initial_State",state)
+        # remove all invalid words from domain i.e run node consistency
         self.enforce_node_consistency()
-        # self.get_actions(state)
-        for x in self.crossword.variables:
-            state[x]='FOUR'
-            self.get_actions(state)
-            break;
-        return []
-        # frontier=[state]
-        # parents={state:(None,None)}
-        # while len(frontier)>0:
-        #     current_state=frontier.pop(0)
-        #     for action in self.get_actions(current_state):
-        #         child=self.get_successor(current_state,action)
-        #         if self.is_goal(child):
-        #             solution=[action]
-        #             while True:
-        #                 current_state,action=parents[current_state]
-        #                 if action is None:
-        #                     return solution
-        #                 else:
-        #                     solution.insert(0, action)
-        #             return solution
-        #         if child not in parents:
-        #             parents[child]=[current_state,action]
-        #             frontier.append(child)
-        # return None
+        frontier=PriorityQueue()
+        start_Node=Node(state,0)
+        frontier.push(self.min_conflict_heuristic(start_Node.state),start_Node)
+        exploredSet=[]
+
+        while frontier.empty() is False:
+            node=frontier.pop()
+            if self.is_goal(node.state):
+                return node.state
+            else:
+                exploredSet.append(node.state)
+                actions=self.get_actions(node.state)
+                for action in actions:
+                    successor=self.get_successor(node.state,action)
+                    if successor not in exploredSet and not frontier.contains_state(successor):
+                        priority=self.min_conflict_heuristic(successor)+node.cost+1
+                        successor_Node=Node(successor,node.cost+1)
+                        frontier.push(priority,successor_Node)
 
 
 def main():
