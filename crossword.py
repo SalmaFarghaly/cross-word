@@ -128,7 +128,7 @@ class Crossword():
                         cells1.index(intersection),
                         cells2.index(intersection)
                     )
-        # print("Overlaaaaaaaaaaaaaaaaaaaap",self.overlaps)
+
 
 
     def neighbors(self, var):

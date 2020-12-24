@@ -125,8 +125,8 @@ class CrosswordCreator():
                 """
                 conditions=dict.fromkeys([i for i in range(var.length)])
                 """
-                get the all other variables that are overlapping with the variable 
-                I want to assigm value to "var"
+                get the all other variables that are overlapping with the variable "var"
+                I want to assigm value to 
                 """
                 overlaps_set=self.crossword.neighbors(var)
                 for overlap_var in overlaps_set:
@@ -203,6 +203,7 @@ class CrosswordCreator():
 
     # A* search algorithm is used to solve the crossword as a search problem
     def solve(self,state):
+        print(state)
         if self.is_goal(state):return[]
         # remove all invalid words from domain i.e run node consistency
         self.enforce_node_consistency()
