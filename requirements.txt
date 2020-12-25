@@ -1,3 +1,1 @@
-install Pillow
-pip install Pillow
-python general_search.py data/structure0.txt data/words0.txt outputs/output.png
+Pillow
