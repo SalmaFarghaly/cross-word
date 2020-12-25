@@ -20,6 +20,9 @@ class Variable():
         return hash((self.i, self.j, self.direction, self.length))
 
     def __eq__(self, other):
+        # print("EQUALLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL")
+        # print(self)
+        # print(other)
         return (
             (self.i == other.i) and
             (self.j == other.j) and
@@ -73,7 +76,6 @@ class Crossword():
                 starts_word = (
                     self.structure[i][j] and (i == 0 or not self.structure[i - 1][j])
                 )
-                # print("startsssssssss_word",starts_word)
                 # here is to measure the length of the variables tol mna la2yah cell fadya t7tya bakhodha ma3ya lghyt lma al2ai awl wa7da msh fadya
                 if starts_word:
                     length = 1
@@ -106,6 +108,24 @@ class Crossword():
                             i=i, j=j,
                             direction=Variable.ACROSS,
                             length=length
+                        ))
+
+                # Variable of length 1 
+                if self.structure[i][j]:
+                    blocked=[False for k in range(4)]
+                    if i!=0:
+                        blocked[0]=self.structure[i-1][j]
+                    if j!=0:
+                        blocked[1]=self.structure[i][j-1]
+                    if i!=self.height-1:
+                        blocked[2]=self.structure[i+1][j]
+                    if j!=self.width-1:
+                        blocked[3]=self.structure[i][j+1]
+                    if any(blocked)!=True:
+                        self.variables.add(Variable(
+                            i=i,j=j,
+                            direction=Variable.ACROSS,
+                            length=1
                         ))
 
         # Compute overlaps for each word

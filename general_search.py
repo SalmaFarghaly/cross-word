@@ -3,6 +3,7 @@ import sys
 from crossword import *
 from util import PriorityQueue
 from util import Node
+import timeit
 
 
 class CrosswordCreator():
@@ -111,6 +112,28 @@ class CrosswordCreator():
 
         img.save(filename)
 
+    def words_variables_consistency(self):
+        
+        max_len=-1
+        for word in self.crossword.words:
+            if max_len<len(word):
+                max_len=len(word)
+        
+        occ_word=[0 for i in range(max_len+1)]
+        occ_variables=[0 for i in range(max_len+1)]
+
+        for var in self.crossword.variables:
+            occ_variables[var.length]+=1
+        
+        for word in self.crossword.words:
+            occ_word[len(word)]+=1
+
+
+        for idx,word in enumerate(occ_word):
+            if occ_variables[idx]>occ_word[idx]:
+                return None
+        return True 
+
     def get_actions(self,state):
         actions=list()
         for var in state:
@@ -203,10 +226,12 @@ class CrosswordCreator():
 
     # A* search algorithm is used to solve the crossword as a search problem
     def solve(self,state):
-        print(state)
         if self.is_goal(state):return[]
         # remove all invalid words from domain i.e run node consistency
         self.enforce_node_consistency()
+        valid=self.words_variables_consistency()
+        if valid==None:
+            return None
         frontier=PriorityQueue()
         start_Node=Node(state,0)
         frontier.push(self.min_conflict_heuristic(start_Node.state),start_Node)
@@ -242,7 +267,10 @@ def main():
     creator = CrosswordCreator(crossword)
 
     initial_state=creator.initial_state
+    start = timeit.default_timer()
     assignment = creator.solve(initial_state)
+    stop = timeit.default_timer()
+    print('Time: ', stop - start)
 
     # Print result
     if assignment is None:

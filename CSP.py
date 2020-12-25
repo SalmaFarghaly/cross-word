@@ -2,6 +2,7 @@ import sys
 
 from crossword import *
 import itertools
+import timeit
 
 
 class CrosswordCreator():
@@ -15,7 +16,11 @@ class CrosswordCreator():
             var: self.crossword.words.copy()
             for var in self.crossword.variables
         }
+        # print("THEEEEE VARIABLESSSS")
         # print(self.crossword.variables)
+        # # print("OVERLAAAAAAAAAAAAAAAAAAAAP")
+        # # print(self.crossword.overlaps)
+
 
     def letter_grid(self, assignment):
         """
@@ -91,11 +96,42 @@ class CrosswordCreator():
         """
         Enforce node and arc consistency, and then solve the CSP.
         """
+        valid=self.words_variables_consistency()
+        if valid==None:
+            return None
         self.enforce_node_consistency()
         self.ac3()
         return self.backtrack(dict())
 
+    """Check first that there are avaliable number of words to the variables
+    """
+
+    def words_variables_consistency(self):
+        
+        max_len=-1
+        for word in self.crossword.words:
+            if max_len<len(word):
+                max_len=len(word)
+        
+        occ_word=[0 for i in range(max_len+1)]
+        occ_variables=[0 for i in range(max_len+1)]
+
+        for var in self.crossword.variables:
+            occ_variables[var.length]+=1
+        
+        for word in self.crossword.words:
+            occ_word[len(word)]+=1
+
+
+        for idx,word in enumerate(occ_word):
+            if occ_variables[idx]>occ_word[idx]:
+                return None
+        return True 
+
     
+    """
+    Apply node consistency on all variables
+    """
     def enforce_node_consistency(self):
         for var in self.crossword.variables:
             new_domain=[]
@@ -266,15 +302,17 @@ class CrosswordCreator():
             return assignment
         var=self.select_unassigned_variable(assignment)
         for value in self.order_domain_values(var,assignment):
+            # print("Variable Backttrackkkkk",var,"Valueeeeeeeeeeee",value)
             new_assignment=assignment.copy()
             new_assignment[var]=value
             if self.consistent(new_assignment)==True:
                 assignment[var]=value
                 result=self.backtrack(assignment)
-                if result !=None: # indicates failure we got stuck with this value
+                if result !=None: # indicates failure we got stuck with this value and we have to try another one
                     return result
-            assignment.pop(var, None)
-        return None # indicates that There is no possible assignment
+                assignment.pop(var, None)
+        return None # indicates that There is no possible assignment for this variable 
+                    # So,the problem has no solution
 
 
 def main():
@@ -287,11 +325,16 @@ def main():
     structure = sys.argv[1]
     words = sys.argv[2]
     output = sys.argv[3] if len(sys.argv) == 4 else None
+    # structure='data\structure4.txt'
+    # words='data\words2.txt'
 
     # Generate crossword
     crossword = Crossword(structure, words)
     creator = CrosswordCreator(crossword)
+    start = timeit.default_timer()
     assignment = creator.solve()
+    stop = timeit.default_timer()
+    print('Time: ', stop - start)
 
     # Print result
     if assignment is None:
