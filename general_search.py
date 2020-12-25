@@ -42,7 +42,7 @@ class general_search():
             self.crossword_creator.domains[var]=new_domain
 
     """
-        Check if there are m variables with length l then there should be m words or greater that have length l 
+        Check if there are m variables with length l then there should be m words or more that have length l 
     """
 
     def words_variables_consistency(self):
@@ -194,7 +194,8 @@ def main():
     structure = sys.argv[1]
     words = sys.argv[2]
     output = sys.argv[3] if len(sys.argv) == 4 else None
-
+    # structure='data\structure6.txt'
+    # words='data\words2.txt'
     # Generate crossword
     crossword = Crossword(structure, words)
     creator = CrosswordCreator(crossword)

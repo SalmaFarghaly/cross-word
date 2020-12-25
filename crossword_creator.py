@@ -1,6 +1,6 @@
 
 """
-This File contains `CrosswordCreator` class which has `crossword variable`(which contains variables,overlaps,words list)
+This File contains `CrosswordCreator` class which has `crossword`(which contains variables,overlaps,words list)
 and the domain of each variable also this class contains some utilities functions for printing and saving the output
 """
 
