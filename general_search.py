@@ -1,22 +1,22 @@
+"""
+This File demonstrates solving the crossword problem using A* search Algorithms
+"""
+
+
+
 import sys
 
 from crossword import *
+from crossword_creator import *
 from util import PriorityQueue
 from util import Node
 import timeit
 
 
-class CrosswordCreator():
+class general_search():
 
-    def __init__(self, crossword):
-        """
-        Create new CSP crossword generate.
-        """
-        self.crossword = crossword
-        self.domains = {
-            var: self.crossword.words.copy()
-            for var in self.crossword.variables
-        }
+    def __init__(self, crossword_creator):
+        self.crossword_creator=crossword_creator
         self._countActions=0
 
 
@@ -31,101 +31,34 @@ class CrosswordCreator():
 
     @property
     def initial_state(self):
-        return dict.fromkeys(self.crossword.variables)
+        return dict.fromkeys(self.crossword_creator.crossword.variables)
 
     def enforce_node_consistency(self):
-        for var in self.crossword.variables:
+        for var in self.crossword_creator.crossword.variables:
             new_domain=[]
-            for word in self.domains[var]:
+            for word in self.crossword_creator.domains[var]:
                 if var.length == len(word):
                     new_domain.append(word)
-            self.domains[var]=new_domain
+            self.crossword_creator.domains[var]=new_domain
 
-
-    def letter_grid(self, assignment):
-        """
-        Return 2D array representing a given assignment.
-        """
-        letters = [
-            [None for _ in range(self.crossword.width)]
-            for _ in range(self.crossword.height)
-        ]
-        for variable, word in assignment.items():
-            direction = variable.direction
-            for k in range(len(word)):
-                i = variable.i + (k if direction == Variable.DOWN else 0)
-                j = variable.j + (k if direction == Variable.ACROSS else 0)
-                letters[i][j] = word[k]
-        return letters
-
-    def print(self, assignment):
-        """
-        Print crossword assignment to the terminal.
-        """
-        letters = self.letter_grid(assignment)
-        for i in range(self.crossword.height):
-            for j in range(self.crossword.width):
-                if self.crossword.structure[i][j]:
-                    print(letters[i][j] or " ", end="")
-                else:
-                    print("█", end="")
-            print()
-
-    def save(self, assignment, filename):
-        """
-        Save crossword assignment to an image file.
-        """
-        from PIL import Image, ImageDraw, ImageFont
-        cell_size = 100
-        cell_border = 2
-        interior_size = cell_size - 2 * cell_border
-        letters = self.letter_grid(assignment)
-
-        # Create a blank canvas
-        img = Image.new(
-            "RGBA",
-            (self.crossword.width * cell_size,
-             self.crossword.height * cell_size),
-            "black"
-        )
-        font = ImageFont.truetype("assets/fonts/OpenSans-Regular.ttf", 80)
-        draw = ImageDraw.Draw(img)
-
-        for i in range(self.crossword.height):
-            for j in range(self.crossword.width):
-
-                rect = [
-                    (j * cell_size + cell_border,
-                     i * cell_size + cell_border),
-                    ((j + 1) * cell_size - cell_border,
-                     (i + 1) * cell_size - cell_border)
-                ]
-                if self.crossword.structure[i][j]:
-                    draw.rectangle(rect, fill="white")
-                    if letters[i][j]:
-                        w, h = draw.textsize(letters[i][j], font=font)
-                        draw.text(
-                            (rect[0][0] + ((interior_size - w) / 2),
-                             rect[0][1] + ((interior_size - h) / 2) - 10),
-                            letters[i][j], fill="black", font=font
-                        )
-
-        img.save(filename)
+    """
+        Check if there are m variables with length l then there should be m words or greater that have length l 
+    """
 
     def words_variables_consistency(self):
         
         max_len=-1
-        for word in self.crossword.words:
+        for word in self.crossword_creator.crossword.words:
             if max_len<len(word):
                 max_len=len(word)
         
         occ_word=[0 for i in range(max_len+1)]
         occ_variables=[0 for i in range(max_len+1)]
 
-        for var in self.crossword.variables:
+        for var in self.crossword_creator.crossword.variables:
             occ_variables[var.length]+=1
         
-        for word in self.crossword.words:
+        for word in self.crossword_creator.crossword.words:
             occ_word[len(word)]+=1
 
 
@@ -151,14 +84,14 @@ class CrosswordCreator():
                 get the all other variables that are overlapping with the variable "var"
                 I want to assigm value to 
                 """
-                overlaps_set=self.crossword.neighbors(var)
+                overlaps_set=self.crossword_creator.crossword.neighbors(var)
                 for overlap_var in overlaps_set:
                     """
                     if the overlapping variables are assigned then the overlapping 
                     constraint between "var" and "overlap_var" must be satisified
                     """
                     if state[overlap_var]!=None:
-                        overlap_idx=self.crossword.overlaps[(var,overlap_var)]
+                        overlap_idx=self.crossword_creator.crossword.overlaps[(var,overlap_var)]
                         if conditions[overlap_idx[0]] == None or conditions[overlap_idx[0]]==state[overlap_var][overlap_idx[1]]:
                             conditions[overlap_idx[0]]=state[overlap_var][overlap_idx[1]]
                         else:
@@ -172,7 +105,7 @@ class CrosswordCreator():
                 # avaliable words for certain variables that won't voilate any constraint
                 avaliable_actions=[]
                 # get words from the domain that satisifies the conditions
-                for word in self.domains[var]:
+                for word in self.crossword_creator.domains[var]:
                     valid=True
                     # if the word is already assigned to another variable in we can't chose it 
                     if word in state.values():
@@ -219,7 +152,7 @@ class CrosswordCreator():
     def min_conflict_heuristic(self,state):
         """
         return the number of actions that are avaliable in this state and choose the state that 
-        will be less for the better states
+        will be have mon conflicts with other states
         """
         return self.countActions-len(self.get_actions(state))
 
@@ -265,12 +198,12 @@ def main():
     # Generate crossword
     crossword = Crossword(structure, words)
     creator = CrosswordCreator(crossword)
-
-    initial_state=creator.initial_state
+    search_problem=general_search(creator)
+    initial_state=search_problem.initial_state
     start = timeit.default_timer()
-    assignment = creator.solve(initial_state)
+    assignment = search_problem.solve(initial_state)
     stop = timeit.default_timer()
-    print('Time: ', stop - start)
+    print('Time Taken to solve the problem: ', stop - start)
 
     # Print result
     if assignment is None:

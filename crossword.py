@@ -1,3 +1,10 @@
+"""
+This File contains the `Variable` class which holds data about the each variable in crossword board
+and contains `Crossword` class which contains the words list, variables of the crossword and the overlap between variables.
+
+"""
+
+
 class Variable():
 
     ACROSS = "across"
@@ -20,9 +27,6 @@ class Variable():
         return hash((self.i, self.j, self.direction, self.length))
 
     def __eq__(self, other):
-        # print("EQUALLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL")
-        # print(self)
-        # print(other)
         return (
             (self.i == other.i) and
             (self.j == other.j) and
@@ -68,15 +72,16 @@ class Crossword():
         self.variables = set()
         for i in range(self.height):
             for j in range(self.width):
-
-                # Vertical words
-                # construct first the vertical variables 
-                # structure[i][j] = true if cell is empty and false if it is blocked
-                # so if the cell is empty and the perivous for me isnt empty so thatis beginning of new variable
+                
+                """
+                    Vertical words
+                    construct first the vertical variables 
+                    structure[i][j] = true if cell is empty and false if it is blocked
+                    so if the cell is empty and the perivous for me isnt empty so thatis beginning of new variable
+                 """
                 starts_word = (
                     self.structure[i][j] and (i == 0 or not self.structure[i - 1][j])
                 )
-                # here is to measure the length of the variables tol mna la2yah cell fadya t7tya bakhodha ma3ya lghyt lma al2ai awl wa7da msh fadya
                 if starts_word:
                     length = 1
                     for k in range(i + 1, self.height):
@@ -110,7 +115,10 @@ class Crossword():
                             length=length
                         ))
 
-                # Variable of length 1 
+                """
+                 If there is a cell that is blocked from all directions (UP,DOWN,RIGHT,LEFT)
+                 then this cell is a variable of length 1 
+                """
                 if self.structure[i][j]:
                     blocked=[False for k in range(4)]
                     if i!=0:
@@ -128,10 +136,13 @@ class Crossword():
                             length=1
                         ))
 
-        # Compute overlaps for each word
-        # For any pair of variables v1, v2, their overlap is either:
-        #    None, if the two variables do not overlap; or
-        #    (i, j), where v1's ith character overlaps v2's jth character
+        """
+         Compute overlaps between each 2 variables
+         For any pair of variables v1, v2, their overlap is either:
+         None, if the two variables do not overlap; or
+         (i, j), where v1's ith character overlaps v2's jth character
+        """
+
         self.overlaps = dict()
         for v1 in self.variables:
             for v2 in self.variables:
